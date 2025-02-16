@@ -81,17 +81,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // Real-time listener for slots
   db.collection("slots").onSnapshot(
     (querySnapshot) => {
-      console.log("Real-time update received!"); // Log for real-time updates
+      console.log("Real-time update received!");
       querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data()); // Log fetched documents
         let slotId = doc.id;
         let slotData = doc.data();
         let slotElement = document.querySelector(`#${slotId}`);
         if (slotElement) {
-          console.log(`Updating slot ${slotId} with status ${slotData.status}`);
           slotElement.querySelector("span").innerText = slotData.status;
-          slotElement.setAttribute("data-text", slotData.status); // Update the data-text attribute
-          slotElement.setAttribute("reservedBy", slotData.reservedBy); // Update the reservedBy attribute
+          slotElement.setAttribute("data-text", slotData.status);
+          slotElement.setAttribute("reservedBy", slotData.reservedBy);
           slotElement.style.backgroundColor =
             slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
           slotElement.style.border =
@@ -103,23 +101,21 @@ document.addEventListener("DOMContentLoaded", function () {
       updateCounts();
     },
     (error) => {
-      console.error("Real-time listener error: ", error); // Log any errors in real-time listener
+      console.error("Real-time listener error: ", error);
     }
   );
 
   // Add click event listeners to slots
-  let slots = document.querySelectorAll(".slot");
-  slots.forEach((slot) => {
-    slot.addEventListener("click", (event) => {
+  document.querySelectorAll(".slot").forEach((slot) => {
+    slot.addEventListener("click", () => {
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
           const userId = user.uid;
-          let span = slot.querySelector("span");
-          let slotId = slot.getAttribute("id"); // Use slot ID for Firestore document ID
+          let slotId = slot.getAttribute("id");
+          let currentStatus = slot.getAttribute("data-text");
           let newStatus =
-            span.innerText === "Available" || span.innerText === ""
-              ? "Reserved"
-              : "Available";
+            currentStatus === "Available" ? "Reserved" : "Available";
+
           if (newStatus === "Reserved") {
             canReserveSlot(userId).then((canReserve) => {
               if (canReserve) {
@@ -129,10 +125,9 @@ document.addEventListener("DOMContentLoaded", function () {
               }
             });
           } else if (
-            slot.getAttribute("data-text") === "Reserved" &&
+            currentStatus === "Reserved" &&
             slot.getAttribute("reservedBy") === userId
           ) {
-            // Allow only if the user is unreserving their own slot
             updateSlotStatus(slotId, newStatus, null);
           } else {
             alert("You can only unreserve your own slot.");
@@ -153,53 +148,49 @@ document.addEventListener("DOMContentLoaded", function () {
         reservedBy: status === "Reserved" ? userId : null,
       })
       .then(() => {
-        console.log("Slot status updated!");
-        let slotElement = document.querySelector(`#${slotId}`);
-        if (slotElement) {
-          slotElement.setAttribute("data-text", status); // Update the data-text attribute
-        }
+        console.log(`Slot ${slotId} status updated to ${status}`);
       })
       .catch((error) => {
-        console.error("Error updating status: ", error);
+        console.error("Error updating slot: ", error);
       });
   }
 
-  // Function to check if the user can reserve a slot
+  // Check if the user already reserved a slot
   function canReserveSlot(userId) {
     return db
       .collection("slots")
       .where("reservedBy", "==", userId)
       .get()
       .then((querySnapshot) => {
-        return querySnapshot.empty; // Returns true if the user has no reserved slots
+        return querySnapshot.empty; // Returns true if user has no reserved slots
+      })
+      .catch((error) => {
+        console.error("Error checking reserved slots: ", error);
+        return false;
       });
   }
 
-  // Update counts of available and reserved slots
+  // Update slot counts
   function updateCounts() {
-    let reservedCount = 0;
-    let availableCount = 0;
-
-    slots.forEach((slot) => {
-      let span = slot.querySelector("span");
-      if (span.innerText === "Reserved") {
-        reservedCount++;
-      } else if (span.innerText === "Available") {
-        availableCount++;
-      }
-    });
-
-    document.getElementById(
-      "Reserved-count"
-    ).innerText = `Reserved Slots: ${reservedCount}`;
-    document.getElementById(
-      "available-count"
-    ).innerText = `Available Slots: ${availableCount}`;
-    document.getElementById("Total-count").innerText = `Total slots: ${
-      reservedCount + availableCount
-    }`;
+    db.collection("slots")
+      .get()
+      .then((querySnapshot) => {
+        let totalSlots = querySnapshot.size;
+        let reservedSlots = 0;
+        querySnapshot.forEach((doc) => {
+          if (doc.data().status === "Reserved") {
+            reservedSlots++;
+          }
+        });
+        document.getElementById(
+          "Total-count"
+        ).innerText = `Total Slots: ${totalSlots}`;
+        document.getElementById(
+          "Reserved-count"
+        ).innerText = `Reserved Slots: ${reservedSlots}`;
+        document.getElementById(
+          "available-count"
+        ).innerText = `Available Slots: ${totalSlots - reservedSlots}`;
+      });
   }
-
-  // Initial count update
-  updateCounts();
 });
