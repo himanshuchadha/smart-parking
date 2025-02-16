@@ -12,6 +12,35 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 console.log("Firebase initialized successfully!");
 
+// Sign-In Handler
+document.getElementById("login-button").addEventListener("click", function () {
+  var email = document.getElementById("email").value;
+  var password = document.getElementById("password").value;
+
+  firebase
+    .auth()
+    .signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      console.log("Signed in successfully!");
+      document.getElementById("login-form").style.display = "none"; // Hide login form
+    })
+    .catch((error) => {
+      console.error("Error signing in: ", error);
+      document.getElementById("login-error").innerText = error.message;
+    });
+});
+
+// Check Auth State Continuously
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    console.log("User is signed in:", user);
+    document.getElementById("login-form").style.display = "none"; // Hide login form if signed in
+  } else {
+    console.log("No user is signed in.");
+    document.getElementById("login-form").style.display = "block"; // Show login form if not signed in
+  }
+});
+
 // Initialize `reservedBy` field for existing documents
 db.collection("slots")
   .get()
