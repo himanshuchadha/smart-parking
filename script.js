@@ -12,10 +12,10 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 console.log("Firebase initialized successfully!");
 
-// Sign-In Handler
+// Sign-In and Sign-Up Handler
 document.getElementById("login-button").addEventListener("click", function () {
   var email = document.getElementById("email").value;
-  var password = document.getElementById("password").value;
+  var password = document.getElement.getElementById("password").value;
 
   firebase
     .auth()
@@ -25,8 +25,23 @@ document.getElementById("login-button").addEventListener("click", function () {
       document.getElementById("login-form").style.display = "none"; // Hide login form
     })
     .catch((error) => {
-      console.error("Error signing in: ", error);
-      document.getElementById("login-error").innerText = error.message;
+      if (error.code === "auth/user-not-found") {
+        // Register the user if they don't exist
+        firebase
+          .auth()
+          .createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            console.log("User registered successfully!");
+            document.getElementById("login-form").style.display = "none"; // Hide login form
+          })
+          .catch((error) => {
+            console.error("Error registering user: ", error);
+            document.getElementById("login-error").innerText = error.message;
+          });
+      } else {
+        console.error("Error signing in: ", error);
+        document.getElementById("login-error").innerText = error.message;
+      }
     });
 });
 
