@@ -1,12 +1,12 @@
 // Firebase Initialization
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyAKqdODWQz3sl7H27FDQN85tOd_qNnRYdk",
   authDomain: "smart-parking-13e29.firebaseapp.com",
   projectId: "smart-parking-13e29",
   storageBucket: "smart-parking-13e29.firebasestorage.app",
   messagingSenderId: "832422095286",
   appId: "1:832422095286:web:141acda9b641cf7b487917",
-  measurementId: "G-052L2SP4ZY",
+  measurementId: "G-052L2SP4ZY", // Added measurementId
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
