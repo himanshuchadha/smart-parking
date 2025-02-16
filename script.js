@@ -11,6 +11,24 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 console.log("Firebase initialized successfully!");
 
+// Initialize `reservedBy` field for existing documents
+db.collection("slots")
+  .get()
+  .then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      doc.ref
+        .update({
+          reservedBy: null,
+        })
+        .then(() => {
+          console.log(`Document ${doc.id} updated successfully!`);
+        })
+        .catch((error) => {
+          console.error("Error updating document: ", error);
+        });
+    });
+  });
+
 // Real-time listener for slots
 db.collection("slots").onSnapshot(
   (querySnapshot) => {
@@ -24,6 +42,7 @@ db.collection("slots").onSnapshot(
         console.log(`Updating slot ${slotId} with status ${slotData.status}`);
         slotElement.querySelector("span").innerText = slotData.status;
         slotElement.setAttribute("data-text", slotData.status); // Update the data-text attribute
+        slotElement.setAttribute("reservedBy", slotData.reservedBy); // Update the reservedBy attribute
         slotElement.style.backgroundColor =
           slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
         slotElement.style.border =
@@ -41,22 +60,46 @@ db.collection("slots").onSnapshot(
 let slots = document.querySelectorAll(".slot");
 slots.forEach((slot) => {
   slot.addEventListener("click", (event) => {
-    let span = slot.querySelector("span");
-    let slotId = slot.getAttribute("id"); // Use slot ID for Firestore document ID
-    let newStatus =
-      span.innerText === "Available" || span.innerText === ""
-        ? "Reserved"
-        : "Available";
-    updateSlotStatus(slotId, newStatus);
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        const userId = user.uid;
+        let span = slot.querySelector("span");
+        let slotId = slot.getAttribute("id"); // Use slot ID for Firestore document ID
+        let newStatus =
+          span.innerText === "Available" || span.innerText === ""
+            ? "Reserved"
+            : "Available";
+        if (newStatus === "Reserved") {
+          canReserveSlot(userId).then((canReserve) => {
+            if (canReserve) {
+              updateSlotStatus(slotId, newStatus, userId);
+            } else {
+              alert("You can only reserve one slot at a time.");
+            }
+          });
+        } else if (
+          slot.getAttribute("data-text") === "Reserved" &&
+          slot.getAttribute("reservedBy") === userId
+        ) {
+          // Allow only if the user is unreserving their own slot
+          updateSlotStatus(slotId, newStatus, null);
+        } else {
+          alert("You can only unreserve your own slot.");
+        }
+      } else {
+        alert("Please sign in to reserve a slot.");
+      }
+    });
   });
 });
 
 // Update slot status in Firestore
-function updateSlotStatus(slotId, status) {
+function updateSlotStatus(slotId, status, userId) {
   db.collection("slots")
     .doc(slotId)
     .set({
       status: status,
+      reservedBy: status === "Reserved" ? userId : null,
     })
     .then(() => {
       console.log("Slot status updated!");
@@ -67,6 +110,17 @@ function updateSlotStatus(slotId, status) {
     })
     .catch((error) => {
       console.error("Error updating status: ", error);
+    });
+}
+
+// Function to check if the user can reserve a slot
+function canReserveSlot(userId) {
+  return db
+    .collection("slots")
+    .where("reservedBy", "==", userId)
+    .get()
+    .then((querySnapshot) => {
+      return querySnapshot.empty; // Returns true if the user has no reserved slots
     });
 }
 
