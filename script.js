@@ -21,7 +21,9 @@ db.collection("slots").onSnapshot(
       let slotData = doc.data();
       let slotElement = document.querySelector(`#${slotId}`);
       if (slotElement) {
+        console.log(`Updating slot ${slotId} with status ${slotData.status}`);
         slotElement.querySelector("span").innerText = slotData.status;
+        slotElement.setAttribute("data-text", slotData.status); // Update the data-text attribute
         slotElement.style.backgroundColor =
           slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
         slotElement.style.border =
@@ -58,6 +60,10 @@ function updateSlotStatus(slotId, status) {
     })
     .then(() => {
       console.log("Slot status updated!");
+      let slotElement = document.querySelector(`#${slotId}`);
+      if (slotElement) {
+        slotElement.setAttribute("data-text", status); // Update the data-text attribute
+      }
     })
     .catch((error) => {
       console.error("Error updating status: ", error);
@@ -91,10 +97,3 @@ function updateCounts() {
 
 // Initial count update
 updateCounts();
-
-// apiKey: "AIzaSyAKqdODWQz3sl7H27FDQN85tOd_qNnRYdk",
-//   authDomain: "smart-parking-13e29.firebaseapp.com",
-//   projectId: "smart-parking-13e29",
-//   storageBucket: "smart-parking-13e29.firebasestorage.app",
-//   messagingSenderId: "832422095286",
-//   appId: "1:832422095286:web:141acda9b641cf7b487917",
