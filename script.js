@@ -11,32 +11,23 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 console.log("Firebase initialized successfully!");
 
-// Fetch slots from Firestore and initialize the UI
-function fetchSlots() {
-  db.collection("slots")
-    .get()
-    .then((querySnapshot) => {
-      querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data()); // Log fetched documents
-        let slotId = doc.id;
-        let slotData = doc.data();
-        let slotElement = document.querySelector(`#${slotId}`);
-        if (slotElement) {
-          slotElement.querySelector("span").innerText = slotData.status;
-          slotElement.style.backgroundColor =
-            slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
-          slotElement.style.border =
-            slotData.status === "Reserved"
-              ? "4px solid red"
-              : "4px solid green";
-        }
-      });
-      updateCounts();
-    })
-    .catch((error) => {
-      console.error("Error fetching documents: ", error);
-    });
-}
+// Real-time listener for slots
+db.collection("slots").onSnapshot((querySnapshot) => {
+  querySnapshot.forEach((doc) => {
+    console.log(doc.id, " => ", doc.data()); // Log fetched documents
+    let slotId = doc.id;
+    let slotData = doc.data();
+    let slotElement = document.querySelector(`#${slotId}`);
+    if (slotElement) {
+      slotElement.querySelector("span").innerText = slotData.status;
+      slotElement.style.backgroundColor =
+        slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
+      slotElement.style.border =
+        slotData.status === "Reserved" ? "4px solid red" : "4px solid green";
+    }
+  });
+  updateCounts();
+});
 
 // Add click event listeners to slots
 let slots = document.querySelectorAll(".slot");
@@ -61,7 +52,6 @@ function updateSlotStatus(slotId, status) {
     })
     .then(() => {
       console.log("Slot status updated!");
-      fetchSlots(); // Refresh slots from Firestore
     })
     .catch((error) => {
       console.error("Error updating status: ", error);
@@ -93,6 +83,5 @@ function updateCounts() {
   }`;
 }
 
-// Initial count update and fetching slots
-fetchSlots();
+// Initial count update
 updateCounts();
