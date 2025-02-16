@@ -120,9 +120,8 @@ p {
   rotate: 90deg;
   color: white;
   text-align: center;
-  padding-top: 5px;
+  padding-top: 10%;
   padding-left: 30px;
-  padding-right: 5%;
 }
 .icon {
   align-self: flex-end;
