@@ -120,7 +120,7 @@ p {
   rotate: 90deg;
   color: white;
   text-align: center;
-  padding-top: 30px;
+  padding-top: 10px;
   padding-left: 30px;
 }
 .icon {
@@ -187,5 +187,8 @@ ul li {
   }
   .block {
     display: none;
+  }
+  .stop {
+    padding-top: 15px;
   }
 }
