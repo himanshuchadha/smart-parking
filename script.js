@@ -12,22 +12,28 @@ var db = firebase.firestore();
 console.log("Firebase initialized successfully!");
 
 // Real-time listener for slots
-db.collection("slots").onSnapshot((querySnapshot) => {
-  querySnapshot.forEach((doc) => {
-    console.log(doc.id, " => ", doc.data()); // Log fetched documents
-    let slotId = doc.id;
-    let slotData = doc.data();
-    let slotElement = document.querySelector(`#${slotId}`);
-    if (slotElement) {
-      slotElement.querySelector("span").innerText = slotData.status;
-      slotElement.style.backgroundColor =
-        slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
-      slotElement.style.border =
-        slotData.status === "Reserved" ? "4px solid red" : "4px solid green";
-    }
-  });
-  updateCounts();
-});
+db.collection("slots").onSnapshot(
+  (querySnapshot) => {
+    console.log("Real-time update received!"); // Log for real-time updates
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id, " => ", doc.data()); // Log fetched documents
+      let slotId = doc.id;
+      let slotData = doc.data();
+      let slotElement = document.querySelector(`#${slotId}`);
+      if (slotElement) {
+        slotElement.querySelector("span").innerText = slotData.status;
+        slotElement.style.backgroundColor =
+          slotData.status === "Reserved" ? "#FFADB0" : "#59e659";
+        slotElement.style.border =
+          slotData.status === "Reserved" ? "4px solid red" : "4px solid green";
+      }
+    });
+    updateCounts();
+  },
+  (error) => {
+    console.error("Real-time listener error: ", error); // Log any errors in real-time listener
+  }
+);
 
 // Add click event listeners to slots
 let slots = document.querySelectorAll(".slot");
@@ -85,3 +91,10 @@ function updateCounts() {
 
 // Initial count update
 updateCounts();
+
+// apiKey: "AIzaSyAKqdODWQz3sl7H27FDQN85tOd_qNnRYdk",
+//   authDomain: "smart-parking-13e29.firebaseapp.com",
+//   projectId: "smart-parking-13e29",
+//   storageBucket: "smart-parking-13e29.firebasestorage.app",
+//   messagingSenderId: "832422095286",
+//   appId: "1:832422095286:web:141acda9b641cf7b487917",
